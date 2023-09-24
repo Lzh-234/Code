@@ -1,0 +1,409 @@
+//平衡二叉排序树
+#include<stdio.h>
+#include<stdlib.h>
+#include<malloc.h>
+#include<stack>
+#include<queue>
+#include<algorithm>
+using namespace std;
+
+typedef int ElemType;
+typedef struct BSTNode{
+	int data;
+	int height;//二叉树的高度
+	struct BSTNode *lchild,*rchild;
+}BSTNode,*BSTree;
+
+//计算二叉树的高度
+int GetHeight(BSTree T)
+{
+	if(T==NULL)
+	return -1;
+	else
+	return T->height;	
+}
+
+BSTree LL_Adjust(BSTree T)
+{
+	BSTree AVLT=T->lchild;
+	T->lchild=AVLT->rchild;
+	AVLT->rchild=T;
+	T->height=max(GetHeight(T->lchild),GetHeight(T->rchild))+1;//更新二叉树的高度
+	AVLT->height=max(GetHeight(AVLT->lchild),GetHeight(AVLT->rchild))+1;
+	return AVLT;
+}
+
+BSTree RR_Adjust(BSTree T)
+{
+	BSTree AVLT=T->rchild;
+	T->rchild=AVLT->lchild;
+	AVLT->lchild=T;
+	T->height=max(GetHeight(T->lchild),GetHeight(T->rchild))+1;
+	AVLT->height=max(GetHeight(AVLT->lchild),GetHeight(AVLT->rchild))+1;
+	return AVLT;
+}
+
+BSTree LR_Adjust(BSTree T)
+{
+	T->lchild=RR_Adjust(T->lchild);
+	return LL_Adjust(T);
+}
+
+BSTree RL_Adjust(BSTree T)
+{
+	T->rchild=RR_Adjust(T->rchild);
+	return LL_Adjust(T);
+}
+
+//平衡二叉树的调整
+BSTree AVLAdjust(BSTree &T)
+{
+	if(GetHeight(T->lchild)-GetHeight(T->rchild)==2)//左子树不平衡
+	{
+			if(GetHeight(T->lchild->lchild)>=GetHeight(T->lchild->rchild))
+			T=LL_Adjust(T);//LL型
+			else
+			T=LR_Adjust(T);//LR型
+	}
+	else if(GetHeight(T->lchild)-GetHeight(T->rchild)==-2)
+	{
+		if(GetHeight(T->rchild->rchild)>=GetHeight(T->rchild->lchild))
+		T=RR_Adjust(T);//RR型
+		else
+		T=RL_Adjust(T);//RL型
+	}	
+	T->height=max(GetHeight(T->lchild),GetHeight(T->rchild))+1;//更新二叉树的高度
+	return T;
+}
+
+//（1）插入新结点
+void InsertBST(BSTree &T,ElemType e)
+{
+	if(!T)
+	{
+		T=new BSTNode;
+		T->data=e;
+		T->lchild=NULL;
+		T->rchild=NULL;
+		T->height=0;
+	}
+	else if(e<T->data)//比根结点小
+	{
+		InsertBST(T->lchild,e);//将*S插入到左子树
+		AVLAdjust(T);//调整平衡二叉树
+	}
+	else
+	{
+		InsertBST(T->rchild,e);//将*S插入到右子树
+		AVLAdjust(T);
+	}
+}
+
+//创建二叉树
+void CreateBST(BSTree &T,int n)
+{
+	T=NULL;
+	int e;
+	int i;
+	for(i=0;i<n;i++)
+	{
+		scanf("%d",&e);
+		InsertBST(T,e);//插入二叉排序树中
+	}
+}
+
+//（2）前序、中序、后序遍历二叉树
+void Pre(BSTree &T)//前序遍历
+{
+	if(T)
+	{
+		printf("%d ",T->data);//访问根
+		Pre(T->lchild);//左子树
+		Pre(T->rchild);//右子树
+	}
+}
+
+void In(BSTree &T)//中序遍历
+{
+	if(T)
+	{
+		In(T->lchild);//左子树
+		printf("%d ",T->data);//访问根
+		In(T->rchild);//右子树
+	}
+}
+
+void Post(BSTree &T)//后序遍历
+{
+	if(T)
+	{
+		Post(T->lchild);//左子树
+		Post(T->rchild);//右子树
+		printf("%d ",T->data);//访问根
+	}
+}
+
+//（3）前序、中序、后序遍历的非递归算法
+void PreOrder(BSTree &T)//前序
+{
+	stack<BSTree>S;//栈作为辅助结构
+	BSTree p;
+	p=T;
+	while(p||!S.empty())
+	{
+		while(p)
+		{
+			printf("%d ",p->data);//访问根
+			S.push(p);
+			p=p->lchild;//遍历左子树
+		}
+		if(!S.empty())
+		{
+			p=S.top();
+			S.pop();
+			p=p->rchild;//遍历右子树
+		}
+	}
+}
+
+void InOrder(BSTree &T)//中序
+{
+	stack<BSTree>S;
+	BSTree p;
+	p=T;
+	while(p||!S.empty())
+	{
+		while(p)
+		{
+			S.push(p);
+			p=p->lchild;//遍历左子树
+		}
+		if(!S.empty())
+		{
+			p=S.top();
+			S.pop();
+			printf("%d ",p->data);//访问根
+			p=p->rchild;//遍历右子树
+		}
+	}
+}
+
+void PostOrder(BSTree &T)//后序
+{
+	stack<BSTree>S;
+	BSTree p,top=NULL,prev=NULL;
+	p=T;
+	while(p||!S.empty())
+	{
+		while(p)
+		{
+			S.push(p);
+			p=p->lchild;//遍历左子树
+		}
+		top=S.top();
+		if(top->rchild&&top->rchild!=prev)
+		{
+			p=top->rchild;
+		}
+		else
+		{
+			printf("%d ",top->data);
+			prev=top;
+			S.pop();
+		}
+	}	
+}
+
+//（4）层序遍历
+void Level(BSTree &T)
+{
+	queue<BSTree>q;//队列作为辅助结构
+	q.push(T);
+	BSTree p;
+	while(!q.empty())
+	{
+		p=q.front();
+		printf("%d ",p->data);
+		q.pop();
+		if(p->lchild)
+		q.push(p->lchild);//左子树入队
+		if(p->rchild)
+		q.push(p->rchild);//右子树入队
+	}
+}
+
+//（5） 在二叉树中查找给定关键字(函数返回值为成功1,失败0) 
+BSTree SearchBST(BSTree &T,ElemType e)//查找二叉树
+{
+	if(!T||T->data==e) return T;
+	else if(e<T->data) return SearchBST(T->lchild,e);//递归左子树
+	else return SearchBST(T->rchild,e);//递归右子树
+}
+
+//（6） 交换各结点的左右子树
+BSTree ChangeBST(BSTree &T)//交换左右结点
+{
+	if(T)
+	{
+		if(T->lchild||T->rchild)
+		{
+			BSTree p,q;
+			p=ChangeBST(T->lchild);//递归左子树
+			q=ChangeBST(T->rchild);//递归右子树
+			T->lchild=q;
+			T->rchild=p;
+		}
+	}
+	return T;
+}
+
+//（7） 求二叉树的深度
+int Depth(BSTree &T)//二叉树的深度
+{
+	if(T==NULL) return 0;
+	else
+	{
+		int m=Depth(T->lchild);//递归计算左子树深度
+		int n=Depth(T->rchild);//递归计算右子树深度
+		if(m>=n)
+		return m+1;
+		else
+		return n+1;
+	}
+}
+
+//（8）求叶子结点数
+int BSTreeLeaf(BSTree &T)//计算叶子结点的数量
+{
+	if(T==NULL)
+	{
+		return 0;
+	}
+	else
+	{
+		if(T->lchild==NULL&&T->rchild==NULL)
+		{
+			return 1;
+		}
+		return BSTreeLeaf(T->lchild)+BSTreeLeaf(T->rchild);//计算左右子树叶子结点之和
+	}
+}
+
+//（9）删除某结点
+void DeteleBST(BSTree &T,ElemType key)
+{
+	BSTree p=T,f=NULL,q,s;
+	while(p)//找到结点的位置
+	{
+		if(p->data==key)
+		break;
+		f=p;//f为p的双亲结点
+		if(p->data>key)
+		p=p->lchild;//比关键字大，遍历左子树
+		else
+		p=p->rchild;
+	}
+	if(!p)//结点不存在
+	return;
+	//二叉排序树的删除有三种情况
+	q=p;
+	if((p->lchild)&&(p->rchild))
+	{
+		s=p->lchild;
+		while(s->rchild)
+		{
+			q=s;//记录前驱结点
+			s=s->rchild;//找到中序遍历的最后一个结点
+		}
+		p->data=s->data;
+		if(q!=p)
+		q->rchild=s->lchild;//重新连接*q的右子树
+		else
+		q->lchild=s->lchild;//重新连接*q的右子树
+		free(s);
+		return;
+	}
+	else if(!p->lchild)
+	{
+		p=p->rchild;//缺少左子树用右孩子填补
+	}
+	else
+	{
+		p=p->lchild;//缺少右子树用左孩子填补
+	}
+	
+	if(!f)
+	T=p;//被删除的结点为根结点
+	else if(q==f->lchild)
+	f->lchild=p;//连接左子树
+	else
+	f->rchild=p;//连接右子树
+	free(q);
+	
+	T=AVLAdjust(T);
+}
+
+int main()
+{
+	int n;//输入第一行
+	printf("建立平衡二叉树\n");
+	scanf("%d",&n);//输入第二行
+
+	BSTree T;
+	CreateBST(T,n);//创建二叉树
+	
+	printf("前序遍历 "); Pre(T);printf("\n");//前序    
+	printf("中序遍历 ");In(T);printf("\n");//中序   
+	printf("后序遍历 ");Post(T);printf("\n");//后序
+	
+	
+	int e1,e2,e3,e4;
+	printf("输入查找的值:\n"); 
+	scanf("%d",&e1);
+	if(SearchBST(T,e1)) printf("查找结果 1\n");//查找e1   
+	else printf("查找结果 0\n");
+	
+	printf("输入查找的值：\n",e2);
+	scanf("%d",&e2);
+	if(SearchBST(T,e2)) printf("查找结果 1\n");//查找e2    
+	else printf("查找结果 0\n");
+	
+	printf("插入:\n",e3);
+	scanf("%d",&e3);
+	InsertBST(T,e3);//插入e3
+	
+	printf("前序遍历 ");Pre(T);printf("\n");//前序	
+	printf("中序遍历 ");In(T);printf("\n");//中序 	
+	printf("后序遍历 ");Post(T);printf("\n");//后序	
+	
+	printf("非递归\n");
+	printf("前序遍历 ");PreOrder(T);printf("\n");//前序
+	printf("中序遍历 ");InOrder(T);printf("\n");//中序
+	printf("后序遍历 ");PostOrder(T);printf("\n\n");//后序	 
+	
+	printf("层次遍历 ");Level(T);printf("\n\n");//层次遍历
+	
+	
+    printf("交换结点的左右子树\n");
+	ChangeBST(T);//交换左右结点
+	printf("前序遍历 ");Pre(T);printf("\n");//前序	
+	printf("中序遍历 ");In(T);printf("\n");//中序
+	printf("后序遍历 ");Post(T);printf("\n");//后序	
+	
+	printf("交换结点的左右子树\n");
+	ChangeBST(T);//交换左右结点
+	printf("前序遍历 ");Pre(T);printf("\n");//前序	
+	printf("中序遍历 ");In(T);printf("\n");//中序
+	printf("后序遍历 ");Post(T);printf("\n");//后序	
+	
+	
+	printf("输入删除的值：\n");
+	scanf("%d",&e4);
+	DeteleBST(T,e4);//删除e4
+	printf("前序遍历 ");Pre(T);printf("\n");//前序	
+	printf("中序遍历 ");In(T);printf("\n");//中序
+	printf("后序遍历 ");Post(T);printf("\n\n");//后序	
+	
+	printf("二叉树深度 ");printf("%d\n",Depth(T));//二叉树深度
+	printf("叶子结点数 ");printf("%d\n",BSTreeLeaf(T));//叶子结点数	
+}
